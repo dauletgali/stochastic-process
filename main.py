@@ -1,7 +1,7 @@
 import numpy as np
 from fractions import Fraction
 
-class stochastic:
+class continuous:
     transitionMatrix = object()
     generatorMatrix = object()
     
@@ -72,91 +72,105 @@ class stochastic:
 
         return expression
     
-    class discrete:
+class discrete(stochastic):
+    #initialize object of discrete stochastic process with transition matrix
+    def __init__ (self, transitionMatrix):
+        for element in transitionMatrix:
+            if round(np.sum(element)) != 1:
+                print("Error")
+            else:
+                self.transitionMatrix = transitionMatrix
+                # rows, columns = transitionMatrix.shape
+                self.stateSpace = [count for count, element in enumerate(transitionMatrix)]
 
-        def __init__ (self, transitionMatrix):
-            for element in transitionMatrix:
-                if np.sum(element) != 1:
-                    print("Error")
-                else:
-                    self.transitionMatrix = transitionMatrix
-        #multi step transition probability
-        @staticmethod
-        def changetoFraction (self, arr):
-            fractionedArray = []
-            for row in arr:
-                i = []
-                for probability in row:
-                    prob = float(probability)
-                    frac = Fraction(prob).limit_denominator()
-                    i.append(str(frac))
-                fractionedArray.append(i)
-            print(np.array(fractionedArray, dtype= object))
-            return np.array(fractionedArray, dtype= object)
+    
+    def makeFraction (self, matrix):
+        fractionedArray = []
+        for row in matrix:
+            i = []
+            for probability in row:
+                prob = float(probability)
+                frac = Fraction(prob).limit_denominator()
+                i.append(str(frac))
+            fractionedArray.append(i)
+        print(np.array(fractionedArray, dtype= object))
+        return np.array(fractionedArray, dtype= object)
+    
+    #n step transition probability, that is n th power of transtion matrix
+    def nSteptransition (self , n):
+        nSteptransitionMatrix = np.linalg.matrix_power(self.transitionMatrix , n)
+        print(nSteptransitionMatrix)
+        print("This is matrix of " +str(n)+ "power, and p^(n)(i,j) is the (i,j) term of this transition matrix")
+
+    def stateClassification (self):
+        # In order to classify as recurrent or transient we need to raise transition matrix to high power and see if total sum of p(i,i) = inf
+        probabilityInInfinity = []
+        for i in range(0, len(self.transitionMatrix)):
+            prob = self.transitionMatrix[i,i]
+            for n in range(2,5000):
+                matrix = np.linalg.matrix_power(self.transitionMatrix , n)
+                prob = prob + matrix[i,i]
+            probabilityInInfinity.append(prob)
+        recurrentStates = []
+        for count, i in enumerate(probabilityInInfinity):
+            if i <=10:
+                print("state " +str(count)+" is transcient")
+                recurrentStates.append(False)
+            else:
+                print("state " +str(count)+" is recurrent")
+                recurrentStates.append(True)
+        self.recurrentStates = recurrentStates
+    
+    def stationary(self):
+        #limit behavior of transition matrix
+        nSteptransitionMatrix = np.linalg.matrix_power(self.transitionMatrix , 10000)
+        a = self.makeFraction(nSteptransitionMatrix)
+        print("each row of above matrix will be stationary distribution")
+        self.limitTransitionMatrix = nSteptransitionMatrix
+    
+    def meanRecurrenceTime (self):
+        #here we will use theorem which states that mean recurrence time = 1/pi where pi is limit transition probability of each state
+        self.stationary()
+        for i in self.stateSpace:
+            limitProb = self.limitTransitionMatrix[i,i]
+            meanTime = 1/limitProb
+            print("mean time of state : " +str(i)+ " is :" +str(meanTime))
+    
+    def findUsualStaff (self):
+        self.stateClassification()
+        self.stationary()
+        self.meanRecurrenceTime()
+
+    
 
 
-        def findProb (self, m):
-            mStepMatrix = np.linalg.matrix_power(self.transitionMatrix, m)
-            a = changetoFraction(mStepMatrix)
-            print()
-
-        
-
-
-
-
-a = [
-    [0.4 , 0.6,0],
-    [0.2,0.5,0.3],
-    [0.1,0.7,0.2]
-]
-
-s = stochastic.discrete(a)
-s.findProb(2)
-print(s.transitionMatrix)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-# q = np.array([[-2,1,1],[1,-1,0],[2,1,-3]])
-# t = np.array([
-#     [0, 0.117 , 0.883],
-#     [0.432,0,0.568],
-#     [0.754, 0.246, 0]
+# a = np.array([
+#     [0.4 , 0.6,0],
+#     [0.2,0.5,0.3],
+#     [0,0.5,0.5]
 # ])
-# print(t)
-# sto = stochastic(transitionMatrix=t)
-# print(sto.generatorMatrix)
-# avb = sto.forwardEquation(prob=(2,2))
-# print(avb)
 
+# b = np.array([
+#      [1/4, 0 , 1/2, 0 , 0, 1/4],
+#      [1/6, 1/3 , 1/2 , 0, 0, 0], 
+#      [0, 0 ,1/4 , 0 , 3/4, 0],
+#      [1/2,  1/6, 1/6, 0, 0, 1/6],
+#      [0,0,1/3,0,2/3,0],
+#      [0,0,0,0,0,1]
+#  ])
+# c = np.array([
+#      [0.1 , 0.9, 0 , 0],
+#      [0.5,0.5 , 0 , 0],
+#      [0,0, 0.5, 0.5] ,
+#      [0,0,0.5,0.5]
+#  ])
 
+# d = np.array([
+#     [1/2, 0, 0, 1/2],
+#     [0,1/2,1/2,0],
+#     [0,1/4,3/4,0],
+#     [1/4, 0 , 0, 3/4]
+# ])
 
-
-
-
-
-
+# s = discrete(b)
+# s.findUsualStaff()
